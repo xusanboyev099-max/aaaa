@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F3F6F9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1620" media="(prefers-color-scheme: dark)">
+<title>QuickShare — rasm va videolarni tez uzating</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%230FB5A4'/%3E%3Cpath d='M20 34l12-12 12 12M32 22v22' stroke='white' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F3F6F9; --surface:#FFFFFF; --ink:#14202B; --muted:#64768A; --line:#E3E9EF;
+  --teal:#0FB5A4; --teal-d:#0A8F82; --blue:#2E9BFF; --indigo:#5B6CFF;
+  --ok:#12A150; --warn:#E0A100; --err:#D6453D;
+  --grad:linear-gradient(135deg,#12C4B1 0%,#2E9BFF 100%);
+  --shadow:0 1px 2px rgba(20,32,43,.04),0 14px 34px -14px rgba(20,70,90,.22);
+  --tint:#E9F8F6;
+  color-scheme:light dark;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0E1620;--surface:#16212D;--ink:#EAF1F7;--muted:#8FA3B7;--line:#243242;--tint:#13302E;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 14px 34px -14px rgba(0,0,0,.6)}
+}
+*,*::before,*::after{box-sizing:inherit}
+[hidden]{display:none!important}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);
+  font-family:Manrope,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(900px 420px at 85% -10%,rgba(46,155,255,.14),transparent 60%),radial-gradient(700px 380px at -10% 0%,rgba(18,196,177,.14),transparent 60%);
+  background-repeat:no-repeat}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0}
+button:focus-visible,input:focus-visible{outline:3px solid rgba(46,155,255,.55);outline-offset:2px}
+.shell{max-width:520px;margin:0 auto;padding:18px 18px 40px}
+.top{display:flex;align-items:center;gap:10px;height:48px;margin-bottom:6px}
+.back{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--surface);box-shadow:var(--shadow)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;letter-spacing:-.02em}
+.mark{width:34px;height:34px;border-radius:11px;background:var(--grad);display:grid;place-items:center;box-shadow:0 8px 18px -8px rgba(18,150,200,.7)}
+h1{font-size:clamp(28px,8vw,36px);line-height:1.1;letter-spacing:-.03em;font-weight:800;margin:26px 0 12px}
+h2{font-size:17px;margin:0;font-weight:700;letter-spacing:-.01em}
+.lead{color:var(--muted);margin:0 0 26px;font-size:16.5px;max-width:42ch}
+.card{background:var(--surface);border-radius:28px;box-shadow:var(--shadow);padding:20px;margin-top:16px}
+.view{animation:none}
+
+/* Home */
+.stage{display:flex;align-items:center;justify-content:center;gap:14px;margin:22px 0 4px}
+.phone{width:78px;height:132px;border-radius:22px;background:var(--surface);border:3px solid var(--ink);padding:7px;display:flex;flex-direction:column;gap:6px;box-shadow:var(--shadow)}
+.phone i{display:block;border-radius:9px;flex:1;background:linear-gradient(160deg,#FFB86B,#FF6F91)}
+.phone i+i{background:linear-gradient(160deg,#6BD3FF,#5B6CFF);flex:.7}
+.phone.r i{background:var(--tint);border:2px dashed var(--teal)}
+.phone.r i+i{background:var(--tint);border:2px dashed var(--teal)}
+.track{position:relative;flex:1;max-width:120px;height:4px;border-radius:4px;background:repeating-linear-gradient(90deg,var(--line) 0 8px,transparent 8px 14px)}
+.track b{position:absolute;top:-7px;left:0;width:18px;height:18px;border-radius:50%;background:var(--grad);box-shadow:0 0 0 6px rgba(18,196,177,.18);animation:fly 2.2s cubic-bezier(.6,0,.3,1) infinite}
+@keyframes fly{0%{transform:translateX(0);opacity:0}15%{opacity:1}85%{opacity:1}100%{transform:translateX(100px);opacity:0}}
+.action{display:flex;align-items:center;gap:16px;width:100%;text-align:left;padding:18px 20px;border-radius:26px;background:var(--surface);box-shadow:var(--shadow);margin-top:14px;transition:transform .15s ease}
+.action:active{transform:scale(.985)}
+.action .ic{flex:none;width:52px;height:52px;border-radius:18px;display:grid;place-items:center;background:var(--tint);color:var(--teal-d)}
+.action strong{display:block;font-size:19px;letter-spacing:-.01em}
+.action span.sub{display:block;color:var(--muted);font-size:14.5px}
+.action.primary{background:var(--grad);color:#fff;box-shadow:0 18px 34px -16px rgba(30,130,230,.75)}
+.action.primary .ic{background:rgba(255,255,255,.22);color:#fff}
+.action.primary .sub{color:rgba(255,255,255,.88)}
+.action .ic.indigo{background:rgba(91,108,255,.12);color:var(--indigo)}
+.foot{color:var(--muted);font-size:14px;text-align:center;margin:26px 0 0}
+
+/* Status pill */
+.status{display:inline-flex;align-items:center;gap:9px;padding:8px 14px;border-radius:999px;background:var(--bg);font-weight:600;font-size:14.5px;max-width:100%}
+.status i{flex:none;width:10px;height:10px;border-radius:50%;background:var(--warn)}
+.status.busy i,.status.wait i{animation:pulse 1.4s ease-in-out infinite}
+.status.busy i{background:var(--teal)}
+.status.ok i{background:var(--ok)}
+.status.err i{background:var(--err)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(15,181,164,.5)}50%{box-shadow:0 0 0 7px rgba(15,181,164,0)}}
+
+/* Send */
+.qr-card{text-align:center}
+.qr-wrap{width:min(260px,72vw);aspect-ratio:1;margin:2px auto 16px;background:#fff;border-radius:22px;padding:10px;display:grid;place-items:center;box-shadow:0 0 0 1px var(--line),0 16px 30px -18px rgba(20,70,90,.5)}
+.qr-wrap svg{width:100%;height:100%;display:block;border-radius:12px}
+.spinner{width:34px;height:34px;border-radius:50%;border:4px solid #E3E9EF;border-top-color:var(--teal);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hint{margin:14px 0 0;color:var(--muted);font-size:14.5px}
+.code-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;flex-wrap:wrap}
+.code{font-weight:800;letter-spacing:.22em;font-size:20px;padding:8px 14px;border-radius:14px;background:var(--bg);text-transform:uppercase}
+.chip{height:40px;padding:0 15px;border-radius:999px;background:var(--bg);font-weight:700;font-size:14.5px;display:inline-flex;align-items:center;gap:7px}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-head span{color:var(--muted);font-size:14px;font-weight:600}
+.pick-big{width:100%;border-radius:22px;border:2px dashed var(--teal);background:var(--tint);color:var(--teal-d);padding:30px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;font-weight:700;font-size:17px}
+.pick-big small{font-weight:500;color:var(--muted);font-size:14px}
+.thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.thumb{position:relative;aspect-ratio:1;border-radius:16px;overflow:hidden;background:var(--bg)}
+.thumb img,.thumb video{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .ph{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted)}
+.thumb .bar{position:absolute;left:0;bottom:0;height:5px;width:0;background:var(--grad)}
+.thumb .rm{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;background:rgba(10,20,30,.55);color:#fff;display:grid;place-items:center;backdrop-filter:blur(4px)}
+.thumb .tag{position:absolute;left:6px;bottom:10px;padding:2px 7px;border-radius:999px;background:rgba(10,20,30,.55);color:#fff;font-size:11.5px;font-weight:700;display:flex;align-items:center;gap:4px}
+.thumb .ok{position:absolute;inset:0;display:none;place-items:center;background:rgba(18,161,80,.55);color:#fff}
+.thumb.done .ok{display:grid}
+.thumb.done .bar,.thumb.done .rm{display:none}
+.btn{height:48px;border-radius:999px;padding:0 20px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.ghost{width:100%;margin-top:14px;background:var(--tint);color:var(--teal-d)}
+.btn.solid{background:var(--grad);color:#fff}
+.summary{margin-top:14px;color:var(--muted);font-size:14px;font-weight:600;text-align:center}
+.warn{margin-top:16px;padding:12px 14px;border-radius:16px;background:rgba(224,161,0,.14);color:var(--ink);font-size:14px}
+
+/* Receive */
+.scanner{position:relative;border-radius:22px;overflow:hidden;background:#0B1118;aspect-ratio:1;display:grid;place-items:center}
+.scanner video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.frame{position:relative;width:62%;aspect-ratio:1;border-radius:24px;box-shadow:0 0 0 999px rgba(8,14,20,.45)}
+.frame::before,.frame::after{content:"";position:absolute;width:36px;height:36px;border:4px solid #fff;border-radius:12px}
+.frame::before{top:-2px;left:-2px;border-right:0;border-bottom:0}
+.frame::after{bottom:-2px;right:-2px;border-left:0;border-top:0}
+.scan-msg{margin:14px 0 0;color:var(--muted);font-size:14.5px;text-align:center}
+.manual{display:flex;gap:10px;margin-top:16px}
+.manual input{flex:1;min-width:0;height:48px;border-radius:999px;border:2px solid var(--line);background:var(--bg);color:var(--ink);padding:0 18px;font:inherit;font-weight:800;letter-spacing:.2em;text-transform:uppercase;text-align:center}
+.manual input::placeholder{letter-spacing:.02em;font-weight:500;text-transform:none;color:var(--muted)}
+.center{text-align:center}
+.files{display:grid;gap:14px;margin-top:16px}
+.rfile{background:var(--surface);border-radius:26px;box-shadow:var(--shadow);overflow:hidden}
+.rfile .media{position:relative;background:var(--bg);aspect-ratio:4/3;display:grid;place-items:center;color:var(--muted)}
+.rfile .media img,.rfile .media video{width:100%;height:100%;object-fit:contain;display:block;background:#0B1118}
+.rfile .info{display:flex;align-items:center;gap:12px;padding:14px 16px}
+.rfile .nm{flex:1;min-width:0}
+.rfile .nm b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}
+.rfile .nm small{color:var(--muted);font-weight:600}
+.rfile .pbar{height:5px;background:var(--line)}
+.rfile .pbar i{display:block;height:100%;width:0;background:var(--grad)}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;pointer-events:none;background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:999px;font-weight:600;font-size:14.5px;transition:.25s;max-width:90vw;z-index:9}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="top">
+    <button class="back" id="back" hidden aria-label="Orqaga">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <div class="brand">
+      <span class="mark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 13l6-6 6 6M12 7v12"/></svg></span>
+      QuickShare
+    </div>
+  </header>
+
+  <!-- HOME -->
+  <section id="v-home" class="view">
+    <div class="stage" aria-hidden="true">
+      <div class="phone"><i></i><i></i></div>
+      <div class="track"><b></b></div>
+      <div class="phone r"><i></i><i></i></div>
+    </div>
+    <h1>Rasm va videolarni bir zumda uzating</h1>
+    <p class="lead">Fayllar qurilmalar orasida toʻgʻridan-toʻgʻri oʻtadi: serverga yuklanmaydi va sifati oʻzgarmaydi.</p>
+
+    <button class="action primary" id="go-send">
+      <span class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V5M7 10l5-5 5 5M5 19h14"/></svg></span>
+      <span><strong>Yuborish</strong><span class="sub">Galereyadan tanlang va QR kodni koʻrsating</span></span>
+    </button>
+    <button class="action" id="go-recv">
+      <span class="ic indigo"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M8 12h8"/></svg></span>
+      <span><strong>Qabul qilish</strong><span class="sub">QR kodni skanerlang</span></span>
+    </button>
+    <p class="foot">Roʻyxatdan oʻtish va ilova oʻrnatish shart emas.</p>
+  </section>
+
+  <!-- SEND -->
+  <section id="v-send" class="view" hidden>
+    <div class="card qr-card">
+      <div class="qr-wrap" id="qr"><div class="spinner"></div></div>
+      <div class="status wait" id="s-status"><i></i><span>Tayyorlanmoqda…</span></div>
+      <div id="s-retry-box" hidden style="margin-top:12px"><button class="btn solid" id="s-retry" type="button">Qayta urinish</button></div>
+      <p class="hint">Qabul qiluvchi qurilma kamerasini shu kodga qaratsin.</p>
+      <div class="code-row">
+        <span class="code" id="s-code">······</span>
+        <button class="chip" id="copy" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="3"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>
+          Nusxa
+        </button>
+        <button class="chip" id="share" type="button" hidden>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M8 8l4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>
+          Ulashish
+        </button>
+      </div>
+      <div class="warn" id="file-warn" hidden>Bu sahifa internetga joylanmagan. QR kod boshqa qurilmada ochilishi uchun sahifani hosting (masalan, Netlify) ga joylang.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Fayllar</h2><span id="f-count"></span></div>
+      <button class="pick-big" id="pick-btn" type="button">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="4"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/></svg>
+        Galereyadan tanlash
+        <small>Rasm va videolarni bir vaqtda tanlash mumkin</small>
+      </button>
+      <div class="thumbs" id="thumbs" hidden></div>
+      <button class="btn ghost" id="add-more" type="button" hidden>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Yana qoʻshish
+      </button>
+      <div class="summary" id="summary" hidden></div>
+    </div>
+  </section>
+
+  <!-- RECEIVE -->
+  <section id="v-recv" class="view" hidden>
+    <div class="card" id="r-scan">
+      <div class="scanner" id="scanner">
+        <video id="cam" playsinline muted></video>
+        <div class="frame"></div>
+      </div>
+      <p class="scan-msg" id="scan-msg">Kamerani yuboruvchi ekranidagi QR kodga qarating.</p>
+      <form class="manual" id="manual" autocomplete="off">
+        <input id="code-in" inputmode="text" maxlength="6" placeholder="yoki kodni kiriting" aria-label="Kod">
+        <button class="btn solid" type="submit">Ulanish</button>
+      </form>
+    </div>
+    <div class="card center" id="r-conn" hidden>
+      <div class="status busy" id="r-status"><i></i><span>Ulanmoqda…</span></div>
+      <div id="r-retry" hidden style="margin-top:16px"><button class="btn solid" id="retry" type="button">Qayta urinish</button></div>
+    </div>
+    <div id="r-all" class="center" hidden style="margin-top:16px"><button class="btn solid" id="save-all" type="button">Hammasini saqlash</button></div>
+    <div class="files" id="r-files"></div>
+  </section>
+</div>
+
+<noscript><p style="text-align:center;padding:20px">QuickShare ishlashi uchun JavaScript yoqilgan boʻlishi kerak.</p></noscript>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="pick" accept="image/*,video/*" multiple hidden>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const ALPHA="abcdefghjkmnpqrstuvwxyz23456789";
+const PREFIX="qshare-";
+const CHUNK=64*1024, BLOCK=1024*1024, HIGH=4*1024*1024, LOW=1024*1024;
+const PEER_OPTS={debug:0,config:{iceServers:[
+  {urls:["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302","stun:stun.cloudflare.com:3478"]},
+  {urls:"turn:eu-0.turn.peerjs.com:3478",username:"peerjs",credential:"peerjsp"},
+  {urls:"turn:us-0.turn.peerjs.com:3478",username:"peerjs",credential:"peerjsp"},
+  {urls:["turn:openrelay.metered.ca:80","turn:openrelay.metered.ca:443","turn:openrelay.metered.ca:443?transport=tcp"],username:"openrelayproject",credential:"openrelayproject"}
+]}};
+const IOS=/iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Mac/.test(navigator.platform));
+
+/* ---------- helpers ---------- */
+function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("on"),2600)}
+function fmt(n){if(n<1024)return n+" B";const u=["KB","MB","GB","TB"];let i=-1;do{n/=1024;i++}while(n>=1024&&i<3);return (n>=100?n.toFixed(0):n.toFixed(1))+" "+u[i]}
+function rid(){return Math.random().toString(36).slice(2,9)}
+function newCode(){const a=new Uint8Array(6);crypto.getRandomValues(a);let s="";for(const x of a)s+=ALPHA[x%ALPHA.length];return s}
+function isVideo(m,n){return /^video\//.test(m)||/\.(mp4|mov|m4v|webm|3gp|mkv|avi)$/i.test(n)}
+function guessMime(n){const e=(n.split(".").pop()||"").toLowerCase();return({jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",gif:"image/gif",webp:"image/webp",heic:"image/heic",heif:"image/heif",avif:"image/avif",mp4:"video/mp4",mov:"video/quicktime",m4v:"video/mp4",webm:"video/webm","3gp":"video/3gpp",mkv:"video/x-matroska"})[e]||"application/octet-stream"}
+function parseCode(t){
+  t=String(t||"").trim();let c=t;
+  try{const u=new URL(t);c=u.hash.slice(1)||u.pathname.split("/").pop()}catch(e){c=t.includes("#")?t.split("#").pop():t}
+  c=c.toLowerCase().replace(/\s+/g,"");
+  return /^[a-z2-9]{6}$/.test(c)?c:null;
+}
+let wake=null;
+async function keepAwake(){try{if(navigator.wakeLock&&!wake){wake=await navigator.wakeLock.request("screen");wake.addEventListener("release",()=>{wake=null})}}catch(e){}}
+function releaseAwake(){try{wake&&wake.release()}catch(e){}wake=null}
+
+/* ---------- lazy libraries (CDN with fallback) ---------- */
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement("script");s.src=src;s.async=true;s.onload=res;s.onerror=()=>rej(new Error(src));document.head.appendChild(s)})}
+function lib(urls,check){let p;return()=>p||(p=(async()=>{if(check())return;for(const u of urls){try{await loadScript(u);if(check())return}catch(e){}}p=null;throw new Error("lib")})())}
+const libs={
+  peer:lib(["https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js","https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"],()=>window.Peer),
+  qr:lib(["https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js","https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"],()=>window.qrcode),
+  jsqr:lib(["https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js","https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"],()=>window.jsQR)
+};
+libs.peer().catch(()=>{});libs.qr().catch(()=>{});
+
+/* ---------- views ---------- */
+const views={home:$("#v-home"),send:$("#v-send"),recv:$("#v-recv")};
+function show(n){for(const k in views)views[k].hidden=k!==n;$("#back").hidden=n==="home";window.scrollTo(0,0)}
+function setStatus(id,kind,text){const e=$(id);e.className="status "+kind;e.querySelector("span").textContent=text}
+
+/* =====================  SEND  ===================== */
+const S={peer:null,conn:null,items:[],sending:false,code:null,gen:0,speed:0};
+const sStatus=(k,t)=>setStatus("#s-status",k,t);
+
+function baseUrl(){return location.href.split("#")[0]}
+
+function renderQR(code){
+  const url=baseUrl()+"#"+code;
+  try{
+    const qr=window.qrcode(0,"M");qr.addData(url,"Byte");qr.make();
+    const n=qr.getModuleCount(),q=4;let d="";
+    for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(qr.isDark(r,c))d+="M"+(c+q)+" "+(r+q)+"h1v1h-1z";
+    const size=n+q*2;
+    $("#qr").innerHTML='<svg viewBox="0 0 '+size+" "+size+'" shape-rendering="crispEdges" role="img" aria-label="QR kod"><rect width="'+size+'" height="'+size+'" fill="#fff"/><path d="'+d+'" fill="#000"/></svg>';
+  }catch(e){$("#qr").textContent="QR yaratib boʻlmadi"}
+  $("#s-code").textContent=code;
+}
+
+function resetSend(){
+  S.gen++;
+  try{S.conn&&S.conn.close()}catch(e){}
+  try{S.peer&&S.peer.destroy()}catch(e){}
+  S.peer=S.conn=null;S.sending=false;
+  S.items.forEach(i=>i.url&&URL.revokeObjectURL(i.url));S.items=[];
+  $("#thumbs").innerHTML="";
+  $("#qr").innerHTML='<div class="spinner"></div>';$("#s-code").textContent="······";
+  sStatus("wait","Tayyorlanmoqda…");
+  renderFilesUI();
+}
+
+async function startSend(){
+  show("send");resetSend();
+  $("#file-warn").hidden=location.protocol!=="file:";
+  $("#share").hidden=!navigator.share;
+  $("#pick").click();               // galereya darhol ochiladi (foydalanuvchi bosishi ichida)
+  await initSendPeer();
+}
+
+function sendFail(text){sStatus("err",text);$("#s-retry-box").hidden=false}
+function restartSendPeer(){
+  S.gen++;
+  try{S.conn&&S.conn.close()}catch(e){}
+  try{S.peer&&S.peer.destroy()}catch(e){}
+  S.peer=S.conn=null;
+  $("#qr").innerHTML='<div class="spinner"></div>';$("#s-code").textContent="······";
+  $("#s-retry-box").hidden=true;sStatus("wait","Tayyorlanmoqda…");
+  initSendPeer();
+}
+async function initSendPeer(){
+  const gen=S.gen;
+  $("#s-retry-box").hidden=true;
+  try{await Promise.all([libs.peer(),libs.qr()])}catch(e){if(gen===S.gen)sendFail("Internet aloqasini tekshiring");return}
+  if(gen!==S.gen)return;
+  const code=newCode();S.code=code;
+  const peer=new window.Peer(PREFIX+code,PEER_OPTS);S.peer=peer;
+  let opened=false;
+  const to=setTimeout(()=>{if(gen===S.gen&&!opened){try{peer.destroy()}catch(e){}sendFail("Server bilan aloqa oʻrnatilmadi")}},15000);
+  peer.on("open",()=>{if(gen!==S.gen)return;opened=true;clearTimeout(to);renderQR(code);sStatus("wait","Skaner kutilmoqda");$("#s-code").textContent=code});
+  peer.on("connection",c=>onIncoming(c,gen));
+  peer.on("disconnected",()=>{if(gen===S.gen&&!peer.destroyed){try{peer.reconnect()}catch(e){}}});
+  peer.on("error",e=>{
+    if(gen!==S.gen)return;
+    if(e.type==="unavailable-id"){clearTimeout(to);try{peer.destroy()}catch(x){}initSendPeer();return}
+    if(!opened)clearTimeout(to);
+    if(["network","server-error","socket-error","socket-closed"].includes(e.type)){
+      if(!opened)sendFail("Aloqa muammosi — internetni tekshiring");
+      else if(!(S.conn&&S.conn.open))sStatus("wait","Aloqa tiklanmoqda…");
+    }else sendFail("Xatolik: "+e.type);
+  });
+}
+
+function onIncoming(conn,gen){
+  if(gen!==S.gen)return;
+  if(S.conn&&S.conn!==conn){try{S.conn.close()}catch(e){}}
+  S.conn=conn;
+  const onOpen=()=>{
+    if(S.conn!==conn)return;
+    S.items.forEach(i=>{i.sent=0;i.state="wait";paintItem(i)});
+    keepAwake();
+    sStatus("ok",S.items.length?"Ulandi — yuborilmoqda":"Ulandi — fayl tanlang");
+    updateSummary();pump();
+  };
+  if(conn.open)onOpen();else conn.on("open",onOpen);
+  conn.on("close",()=>{
+    if(S.conn!==conn)return;
+    S.conn=null;
+    const left=S.items.some(i=>i.state!=="done");
+    sStatus(left?"wait":"ok",left?"Ulanish uzildi — qayta skanerlang":"Hammasi yuborildi");
+  });
+  conn.on("error",()=>{if(S.conn===conn)sStatus("err","Ulanishda xatolik")});
+}
+
+/* --- files --- */
+function addFiles(list){
+  for(const f of list){
+    if(S.items.some(i=>i.file.name===f.name&&i.file.size===f.size&&i.file.lastModified===f.lastModified))continue;
+    const mime=f.type||guessMime(f.name);
+    const it={id:rid(),file:f,mime,video:isVideo(mime,f.name),url:URL.createObjectURL(f),sent:0,state:"wait"};
+    S.items.push(it);buildThumb(it);
+  }
+  renderFilesUI();
+  if(S.conn&&S.conn.open){sStatus("ok","Ulandi — yuborilmoqda");pump()}
+}
+function buildThumb(it){
+  const d=document.createElement("div");d.className="thumb";
+  const ph=document.createElement("div");ph.className="ph";
+  ph.innerHTML='<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="4"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/></svg>';
+  d.appendChild(ph);
+  let m;
+  if(it.video){m=document.createElement("video");m.muted=true;m.playsInline=true;m.preload="metadata";m.src=it.url+"#t=0.1"}
+  else{m=document.createElement("img");m.alt="";m.decoding="async";m.src=it.url}
+  m.onerror=()=>m.remove();
+  d.appendChild(m);
+  if(it.video){const t=document.createElement("div");t.className="tag";t.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l13 8-13 8z"/></svg>'+fmt(it.file.size);d.appendChild(t)}
+  const bar=document.createElement("div");bar.className="bar";d.appendChild(bar);
+  const ok=document.createElement("div");ok.className="ok";ok.innerHTML='<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';d.appendChild(ok);
+  const rm=document.createElement("button");rm.className="rm";rm.type="button";rm.setAttribute("aria-label","Olib tashlash");
+  rm.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  rm.onclick=()=>{if(it.state==="send")return;S.items=S.items.filter(x=>x!==it);URL.revokeObjectURL(it.url);d.remove();renderFilesUI()};
+  d.appendChild(rm);
+  it.el=d;it.bar=bar;
+  $("#thumbs").appendChild(d);
+  paintItem(it);
+}
+function paintItem(it){if(!it.el)return;it.el.classList.toggle("done",it.state==="done");it.bar.style.width=(it.file.size?Math.min(100,it.sent/it.file.size*100):0)+"%"}
+function renderFilesUI(){
+  const n=S.items.length;
+  $("#pick-btn").hidden=n>0;$("#thumbs").hidden=!n;$("#add-more").hidden=!n;
+  const total=S.items.reduce((a,i)=>a+i.file.size,0);
+  $("#f-count").textContent=n?n+" ta · "+fmt(total):"";
+  updateSummary();
+}
+function updateSummary(){
+  const el=$("#summary"),n=S.items.length;
+  if(!n){el.hidden=true;return}
+  const done=S.items.filter(i=>i.state==="done").length;
+  const sending=S.items.some(i=>i.state==="send");
+  el.hidden=!(S.conn&&S.conn.open);
+  if(sending)el.textContent=done+"/"+n+" yuborildi"+(S.speed?" · "+fmt(S.speed)+"/s":"");
+  else if(done===n)el.textContent="Barcha fayllar yuborildi ✓";
+  else el.textContent=done+"/"+n+" yuborildi";
+}
+
+/* --- transfer --- */
+function waitBuf(dc,thr,cond){
+  return new Promise(res=>{
+    let iv=0;
+    const done=()=>{clearInterval(iv);dc.removeEventListener("bufferedamountlow",chk);dc.removeEventListener("close",done);res()};
+    const chk=()=>{if(cond())done()};
+    dc.bufferedAmountLowThreshold=thr;
+    dc.addEventListener("bufferedamountlow",chk);
+    dc.addEventListener("close",done);
+    iv=setInterval(()=>{if(dc.readyState!=="open"||cond())done()},300);
+  });
+}
+function drain(dc){return dc.bufferedAmount<HIGH?Promise.resolve():waitBuf(dc,LOW,()=>dc.bufferedAmount<=LOW)}
+function flush(dc){return dc.bufferedAmount===0?Promise.resolve():waitBuf(dc,0,()=>dc.bufferedAmount===0)}
+async function sendFile(conn,it,idx,total){
+  const dc=conn.dataChannel,f=it.file;
+  dc.send(JSON.stringify({t:"meta",id:it.id,name:f.name,size:f.size,type:it.mime,idx,total}));
+  let off=0,lastT=performance.now(),lastB=0;
+  while(off<f.size){
+    if(S.conn!==conn||dc.readyState!=="open")throw new Error("closed");
+    const buf=await f.slice(off,Math.min(off+BLOCK,f.size)).arrayBuffer();
+    for(let p=0;p<buf.byteLength;p+=CHUNK){
+      await drain(dc);
+      if(S.conn!==conn||dc.readyState!=="open")throw new Error("closed");
+      dc.send(new Uint8Array(buf,p,Math.min(CHUNK,buf.byteLength-p)));
+    }
+    off+=buf.byteLength;it.sent=off;paintItem(it);
+    const now=performance.now();
+    if(now-lastT>500){const sp=(off-lastB)/((now-lastT)/1000);S.speed=S.speed?S.speed*.6+sp*.4:sp;lastT=now;lastB=off;updateSummary()}
+  }
+  await flush(dc);
+  if(S.conn!==conn||dc.readyState!=="open")throw new Error("closed");
+  dc.send(JSON.stringify({t:"end",id:it.id,size:f.size}));
+}
+async function pump(){
+  const conn=S.conn;
+  if(!conn||!conn.open||S.sending)return;
+  S.sending=true;S.speed=0;
+  try{
+    for(;;){
+      const it=S.items.find(i=>i.state==="wait");
+      if(!it)break;
+      if(S.conn!==conn||!conn.open)throw new Error("closed");
+      it.state="send";it.sent=0;updateSummary();
+      await sendFile(conn,it,S.items.indexOf(it)+1,S.items.length);
+      it.state="done";it.sent=it.file.size;paintItem(it);
+    }
+    if(S.conn===conn)sStatus("ok",S.items.every(i=>i.state==="done")?"Hammasi yuborildi ✓":"Ulandi");
+  }catch(e){
+    S.items.forEach(i=>{if(i.state==="send"){i.state="wait";i.sent=0;paintItem(i)}});
+  }finally{
+    S.sending=false;S.speed=0;updateSummary();
+  }
+  if(S.conn&&S.conn.open&&S.items.some(i=>i.state==="wait"))pump();
+}
+
+/* =====================  RECEIVE  ===================== */
+const R={peer:null,conn:null,cur:null,recs:[],stream:null,timer:0,gen:0,t0:0,lastUi:0};
+const rStatus=(k,t)=>setStatus("#r-status",k,t);
+
+function resetRecv(){
+  R.gen++;stopScanner();
+  try{R.conn&&R.conn.close()}catch(e){}
+  try{R.peer&&R.peer.destroy()}catch(e){}
+  R.peer=R.conn=R.cur=null;
+  R.recs.forEach(r=>r.url&&URL.revokeObjectURL(r.url));R.recs=[];
+  $("#r-files").innerHTML="";$("#r-all").hidden=true;
+  $("#r-scan").hidden=true;$("#r-conn").hidden=true;$("#r-retry").hidden=true;
+}
+
+async function startRecv(code){
+  show("recv");resetRecv();
+  if(code)connectTo(code);else startScanner();
+}
+
+async function startScanner(){
+  $("#r-scan").hidden=false;$("#r-conn").hidden=true;
+  const gen=R.gen,msg=$("#scan-msg");
+  msg.textContent="Kamerani yuboruvchi ekranidagi QR kodga qarating.";
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){$("#scanner").hidden=true;msg.textContent="Kamera ochilmadi. Telefon kamerasi bilan skanerlang yoki kodni kiriting.";return}
+  $("#scanner").hidden=false;
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}},audio:false});
+    if(gen!==R.gen){stream.getTracks().forEach(t=>t.stop());return}
+    R.stream=stream;const v=$("#cam");v.srcObject=stream;await v.play();
+    let det=null;
+    if("BarcodeDetector" in window){try{det=new window.BarcodeDetector({formats:["qr_code"]})}catch(e){}}
+    if(!det){try{await libs.jsqr()}catch(e){}}
+    scanTick(gen,det);
+  }catch(e){
+    $("#scanner").hidden=true;
+    msg.textContent="Kameraga ruxsat berilmadi. Telefon kamerasi bilan skanerlang yoki kodni kiriting.";
+  }
+}
+const cv=document.createElement("canvas"),cx=cv.getContext("2d",{willReadFrequently:true});
+function scanTick(gen,det){
+  if(gen!==R.gen||!R.stream)return;
+  const v=$("#cam");
+  const next=()=>{R.timer=setTimeout(()=>scanTick(gen,det),110)};
+  if(v.readyState<2||!v.videoWidth){next();return}
+  const found=c=>{const code=parseCode(c);if(code){if(navigator.vibrate)navigator.vibrate(40);connectTo(code);return true}return false};
+  if(det){
+    det.detect(v).then(r=>{if(gen!==R.gen)return;if(r.length&&found(r[0].rawValue))return;next()}).catch(next);
+  }else if(window.jsQR){
+    const w=Math.min(640,v.videoWidth),h=Math.round(w*v.videoHeight/v.videoWidth);
+    cv.width=w;cv.height=h;cx.drawImage(v,0,0,w,h);
+    const img=cx.getImageData(0,0,w,h),r=window.jsQR(img.data,w,h,{inversionAttempts:"dontInvert"});
+    if(r&&found(r.data))return;next();
+  }else next();
+}
+function stopScanner(){
+  clearTimeout(R.timer);
+  if(R.stream){R.stream.getTracks().forEach(t=>t.stop());R.stream=null}
+  const v=$("#cam");if(v)v.srcObject=null;
+}
+
+async function connectTo(code){
+  stopScanner();
+  const gen=R.gen;
+  $("#r-scan").hidden=true;$("#r-conn").hidden=false;$("#r-retry").hidden=true;
+  rStatus("busy","Ulanmoqda…");
+  let timer=0,peer=null,tries=0,settled=false;
+  const dead=()=>gen!==R.gen;
+  const fail=text=>{
+    if(dead()||settled)return;settled=true;
+    clearTimeout(timer);rStatus("err",text);$("#r-retry").hidden=false;
+    try{peer&&peer.destroy()}catch(e){}
+  };
+  try{await libs.peer()}catch(e){fail("Internet aloqasini tekshiring");return}
+  if(dead())return;
+  timer=setTimeout(()=>{if(!(R.conn&&R.conn.open))fail("Ulanish juda uzoq davom etdi. Ikkala qurilmada internet borligini tekshiring")},30000);
+  peer=new window.Peer(PEER_OPTS);R.peer=peer;
+  const attempt=()=>{
+    if(dead()||settled)return;
+    const conn=peer.connect(PREFIX+code,{serialization:"raw",reliable:true});R.conn=conn;
+    try{
+      const pc=conn.peerConnection;
+      if(pc)pc.addEventListener("iceconnectionstatechange",()=>{
+        if(pc.iceConnectionState==="failed"&&!conn.open)fail("Toʻgʻridan-toʻgʻri ulanish oʻrnatilmadi. Ikkala qurilmani bir xil Wi‑Fi ga ulab koʻring");
+      });
+    }catch(e){}
+    conn.on("open",()=>{
+      if(dead()||R.conn!==conn)return;
+      clearTimeout(timer);settled=true;
+      rStatus("ok","Ulandi — fayllar kutilmoqda");keepAwake();
+    });
+    conn.on("data",onData);
+    conn.on("close",()=>{
+      if(dead()||R.conn!==conn)return;
+      releaseAwake();
+      if(R.cur){rStatus("err","Ulanish uzildi — fayl toʻliq kelmadi");R.cur.card.remove();R.cur=null;$("#r-retry").hidden=false}
+      else if(settled)rStatus(R.recs.length?"ok":"err",R.recs.length?"Qabul qilindi ✓":"Yuboruvchi ulanishni yopdi");
+    });
+    conn.on("error",()=>{if(settled)rStatus("err","Ulanishda xatolik");else fail("Ulanishda xatolik")});
+  };
+  peer.on("open",attempt);
+  peer.on("disconnected",()=>{if(!dead()&&!peer.destroyed&&!settled){try{peer.reconnect()}catch(e){}}});
+  peer.on("error",e=>{
+    if(dead())return;
+    if(e.type==="peer-unavailable"&&!settled){
+      if(tries<3){tries++;rStatus("busy","Yuboruvchi qidirilmoqda…");setTimeout(attempt,1500)}
+      else fail("Kod topilmadi yoki yuboruvchi sahifani yopgan");
+    }else if(!settled)fail("Ulanib boʻlmadi ("+e.type+")");
+  });
+}
+
+function startFile(m){
+  const card=document.createElement("div");card.className="rfile";
+  const media=document.createElement("div");media.className="media";
+  media.innerHTML='<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="4"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/></svg>';
+  const pb=document.createElement("div");pb.className="pbar";const pi=document.createElement("i");pb.appendChild(pi);
+  const info=document.createElement("div");info.className="info";
+  const nm=document.createElement("div");nm.className="nm";
+  const b=document.createElement("b");b.textContent=m.name;
+  const sm=document.createElement("small");sm.textContent="Qabul qilinmoqda… 0%";
+  nm.append(b,sm);info.appendChild(nm);
+  card.append(media,pb,info);
+  $("#r-files").prepend(card);
+  R.cur={meta:m,chunks:[],got:0,card,media,pi,sm,info,t0:performance.now(),lastT:performance.now(),lastB:0,speed:0};
+  rStatus("busy","Qabul qilinmoqda"+(m.total>1?" "+m.idx+"/"+m.total:"")+"…");
+}
+function onData(d){
+  if(typeof d==="string"){
+    let m;try{m=JSON.parse(d)}catch(e){return}
+    if(m.t==="meta")startFile(m);else if(m.t==="end")finishFile(m);
+    return;
+  }
+  const c=R.cur;if(!c)return;
+  let part=d,len=0;
+  if(d instanceof ArrayBuffer)len=d.byteLength;
+  else if(ArrayBuffer.isView(d)){part=d.buffer.slice(d.byteOffset,d.byteOffset+d.byteLength);len=part.byteLength}
+  else if(d instanceof Blob)len=d.size;
+  c.chunks.push(part);c.got+=len;
+  const now=performance.now();
+  if(now-c.lastT>250){
+    const sp=(c.got-c.lastB)/((now-c.lastT)/1000);c.speed=c.speed?c.speed*.6+sp*.4:sp;c.lastT=now;c.lastB=c.got;
+    const pct=c.meta.size?Math.min(100,c.got/c.meta.size*100):0;
+    c.pi.style.width=pct+"%";c.sm.textContent="Qabul qilinmoqda… "+Math.round(pct)+"% · "+fmt(c.speed)+"/s";
+  }
+}
+function finishFile(m){
+  const c=R.cur;if(!c)return;R.cur=null;
+  if(c.meta.size&&c.got!==c.meta.size){
+    c.pi.style.width="0";c.sm.textContent="Fayl toʻliq kelmadi — yuboruvchi qayta yuborsin";
+    rStatus("err","Faylni qabul qilishda xatolik");
+    return;
+  }
+  const mime=c.meta.type||guessMime(c.meta.name);
+  const blob=new Blob(c.chunks,{type:mime});
+  const url=URL.createObjectURL(blob);
+  const rec={name:c.meta.name,mime,blob,url,size:blob.size};R.recs.push(rec);
+  c.pi.style.width="100%";
+  c.media.innerHTML="";
+  let el;
+  if(isVideo(mime,rec.name)){el=document.createElement("video");el.controls=true;el.playsInline=true;el.preload="metadata";el.src=url+"#t=0.1"}
+  else{el=document.createElement("img");el.alt=rec.name;el.src=url}
+  el.onerror=()=>{if(el.parentNode)el.remove();c.media.insertAdjacentHTML("beforeend","<span>Koʻrib boʻlmaydi — saqlab oching</span>")};
+  c.media.appendChild(el);
+  c.sm.textContent=fmt(rec.size);
+  const btn=document.createElement("button");btn.className="btn solid";btn.type="button";btn.textContent="Saqlash";
+  btn.onclick=()=>saveOne(rec);c.info.appendChild(btn);
+  $("#r-all").hidden=R.recs.length<2;
+  rStatus("ok",m&&c.meta.idx===c.meta.total?"Hammasi qabul qilindi ✓":"Ulandi — keyingi fayl kutilmoqda");
+}
+function download(rec){const a=document.createElement("a");a.href=rec.url;a.download=rec.name;document.body.appendChild(a);a.click();a.remove()}
+async function saveOne(rec){
+  if(IOS&&navigator.canShare){
+    const f=new File([rec.blob],rec.name,{type:rec.mime});
+    if(navigator.canShare({files:[f]})){try{await navigator.share({files:[f]});return}catch(e){if(e.name==="AbortError")return}}
+  }
+  download(rec);toast("Saqlandi");
+}
+async function saveAll(){
+  if(IOS&&navigator.canShare){
+    const fs=R.recs.map(r=>new File([r.blob],r.name,{type:r.mime}));
+    if(navigator.canShare({files:fs})){try{await navigator.share({files:fs});return}catch(e){if(e.name==="AbortError")return}}
+  }
+  for(const r of R.recs){download(r);await new Promise(x=>setTimeout(x,350))}
+  toast("Hammasi saqlandi");
+}
+
+/* ---------- events ---------- */
+$("#go-send").onclick=startSend;
+$("#go-recv").onclick=()=>startRecv();
+$("#back").onclick=()=>{
+  resetSend();resetRecv();releaseAwake();
+  history.replaceState(null,"",baseUrl());show("home");
+};
+$("#pick-btn").onclick=()=>$("#pick").click();
+$("#add-more").onclick=()=>$("#pick").click();
+$("#pick").onchange=e=>{const l=Array.from(e.target.files||[]);e.target.value="";if(l.length)addFiles(l)};
+$("#copy").onclick=async()=>{
+  if(!S.code)return;const url=baseUrl()+"#"+S.code;
+  try{await navigator.clipboard.writeText(url)}catch(e){const t=document.createElement("textarea");t.value=url;document.body.appendChild(t);t.select();try{document.execCommand("copy")}catch(x){}t.remove()}
+  toast("Havola nusxalandi");
+};
+$("#share").onclick=()=>{if(S.code)navigator.share({title:"QuickShare",text:"Fayllarni qabul qilish uchun havolani oching",url:baseUrl()+"#"+S.code}).catch(()=>{})};
+$("#manual").onsubmit=e=>{e.preventDefault();const c=parseCode($("#code-in").value);if(c)connectTo(c);else toast("Kod 6 ta belgidan iborat boʻlishi kerak")};
+$("#retry").onclick=()=>startRecv();
+$("#s-retry").onclick=restartSendPeer;
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState!=="visible")return;
+  try{if(S.peer&&S.peer.disconnected&&!S.peer.destroyed)S.peer.reconnect()}catch(e){}
+  if((S.conn&&S.conn.open)||(R.conn&&R.conn.open))keepAwake();
+});
+$("#save-all").onclick=saveAll;
+
+/* ---------- boot: QR havola orqali ochilsa avtomatik ulanadi ---------- */
+const h=parseCode(location.hash.slice(1));
+if(h)startRecv(h);
+})();
+</script>
+</body>
+</html>
